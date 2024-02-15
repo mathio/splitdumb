@@ -35,6 +35,11 @@ const schema: any = createSchema({
       feed: [FeedItem]
       expenses: [Expense]
       payments: [Payment]
+      totals: [UserTotal]
+    }
+    type UserTotal {
+      sum: Float!
+      user: User!
     }
     type User {
       id: ID!
@@ -128,9 +133,26 @@ const schema: any = createSchema({
           })
         ).map((e) => ({ ...e, __typename: "Payment" }));
 
+        console.log(
+          ">>",
+          expenses.flatMap((expense) => [
+            ...expense.payments,
+            ...expense.debts,
+          ]),
+        );
+
+        const totals = expenses
+          .flatMap((expense) => [...expense.payments, ...expense.debts])
+          .reduce((totals, { user, sum }) => {
+            totals[user.id] = totals[user.id] ?? { user, sum: 0 };
+            totals[user.id].sum += Number(sum);
+            return totals;
+          }, {});
+
         return {
           ...group,
           feed: [...expenses, ...payments].sort(sortBy("createdAt", true)),
+          totals: Object.values(totals),
         };
       },
     },

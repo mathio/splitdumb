@@ -10,6 +10,12 @@ const GroupQuery = gql`
       user {
         name
       }
+      totals {
+        sum
+        user {
+          name
+        }
+      }
       feed {
         id
         __typename
@@ -52,7 +58,7 @@ const GroupQuery = gql`
 const Expense = ({ item }) => (
   <>
     <h3>
-      {item.title} &minus; {item.sum}&euro;
+      {item.title}: {item.sum}&euro;
     </h3>
     <p>
       Created by {item.user.name} at {item.createdAt}
@@ -102,6 +108,15 @@ const Groups = () => {
         <>
           <h2>{data.group.title}</h2>
           <p>Created by {data.group.user.name}</p>
+          <p>Totals:</p>
+          <ul>
+            {data.group.totals.map((item) => (
+              <li key={item.id}>
+                {item.user.name}: {item.sum}&euro;
+              </li>
+            ))}
+          </ul>
+          <p>Feed:</p>
           <ul>
             {data.group.feed.map((item) => (
               <li key={item.id}>
