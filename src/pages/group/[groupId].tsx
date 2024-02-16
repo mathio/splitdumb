@@ -16,6 +16,23 @@ const GroupQuery = gql`
           name
         }
       }
+      transactions {
+        user {
+          name
+        }
+        from {
+          user {
+            name
+          }
+          sum
+        }
+        to {
+          user {
+            name
+          }
+          sum
+        }
+      }
       feed {
         id
         __typename
@@ -57,9 +74,9 @@ const GroupQuery = gql`
 
 const Expense = ({ item }) => (
   <>
-    <h3>
+    <h4>
       {item.title}: {item.sum}&euro;
-    </h3>
+    </h4>
     <p>
       Created by {item.user.name} at {item.createdAt}
     </p>
@@ -84,9 +101,9 @@ const Expense = ({ item }) => (
 
 const Payment = ({ item }) => (
   <>
-    <h3>
+    <h4>
       {item.sender.name} sent {item.sum}&euro; to {item.receiver.name}
-    </h3>
+    </h4>
     <p>At {item.createdAt}</p>
   </>
 );
@@ -116,7 +133,39 @@ const Groups = () => {
               </li>
             ))}
           </ul>
-          <p>Feed:</p>
+          <h3>Payments:</h3>
+          <ul>
+            {data.group.transactions.map((item) => (
+              <li key={item.user.id}>
+                <p>{item.user.name}</p>
+                {item.from.length > 0 && (
+                  <>
+                    <p>Receives:</p>
+                    <ul>
+                      {item.from.map((from) => (
+                        <li key={from.user.id}>
+                          {from.user.name}: {from.sum}&euro;
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {item.to.length > 0 && (
+                  <>
+                    <p>Pays:</p>
+                    <ul>
+                      {item.to.map((to) => (
+                        <li key={to.user.id}>
+                          {to.user.name}: {to.sum}&euro;
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+          <h3>Feed:</h3>
           <ul>
             {data.group.feed.map((item) => (
               <li key={item.id}>

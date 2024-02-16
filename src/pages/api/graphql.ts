@@ -36,6 +36,17 @@ const schema: any = createSchema({
       expenses: [Expense]
       payments: [Payment]
       totals: [UserTotal]
+      transactions: [Transaction]
+      users: [User]
+    }
+    type Transaction {
+      user: User!
+      from: [TransactionDetails]
+      to: [TransactionDetails]
+    }
+    type TransactionDetails {
+      user: User!
+      sum: Float!
     }
     type UserTotal {
       sum: Float!
@@ -133,15 +144,7 @@ const schema: any = createSchema({
           })
         ).map((e) => ({ ...e, __typename: "Payment" }));
 
-        console.log(
-          ">>",
-          expenses.flatMap((expense) => [
-            ...expense.payments,
-            ...expense.debts,
-          ]),
-        );
-
-        const totals = expenses
+        const totals: Record<number, { user: any; sum: number }> = expenses
           .flatMap((expense) => [...expense.payments, ...expense.debts])
           .reduce((totals, { user, sum }) => {
             totals[user.id] = totals[user.id] ?? { user, sum: 0 };
@@ -149,10 +152,65 @@ const schema: any = createSchema({
             return totals;
           }, {});
 
+        const users = Object.values(totals).map(({ user }) => user);
+
+        const totalsArray = [...Object.values(totals)].map((obj) => ({
+          ...obj,
+        }));
+
+        const totalsOwed = totalsArray
+          .filter((total) => total.sum < 0)
+          .sort(sortBy("sum"));
+
+        const totalsLent = totalsArray
+          .filter((total) => total.sum > 0)
+          .sort(sortBy("sum", true));
+
+        const allTransactions = [];
+
+        while (totalsOwed.length > 0 || totalsLent.length > 0) {
+          const owed = totalsOwed.shift();
+          const lent = totalsLent.shift();
+
+          if (lent.sum > owed.sum) {
+            lent.sum += owed.sum;
+            if (lent.sum > 0) {
+              totalsLent.unshift(lent);
+            }
+            allTransactions.push({
+              from: owed.user,
+              to: lent.user,
+              sum: owed.sum,
+            });
+          } else {
+            owed.sum += lent.sum;
+            if (owed.sum > 0) {
+              totalsOwed.unshift(owed);
+            }
+            allTransactions.push({
+              from: owed.user,
+              to: lent.user,
+              sum: lent.sum,
+            });
+          }
+        }
+
+        const transactions = users.map((user) => ({
+          user,
+          from: allTransactions
+            .filter((t) => t.to.id === user.id)
+            .map(({ from, sum }) => ({ user: from, sum })),
+          to: allTransactions
+            .filter((t) => t.from.id === user.id)
+            .map(({ to, sum }) => ({ user: to, sum })),
+        }));
+
         return {
           ...group,
           feed: [...expenses, ...payments].sort(sortBy("createdAt", true)),
           totals: Object.values(totals),
+          transactions,
+          users,
         };
       },
     },
