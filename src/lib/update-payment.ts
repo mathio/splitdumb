@@ -9,31 +9,31 @@ export const updatePayment = async (
     senderId,
     receiverId,
   }: {
-    id: number;
+    id: string;
     sum: number;
-    groupId: number;
-    senderId: number;
-    receiverId: number;
+    groupId: string;
+    senderId: string;
+    receiverId: string;
   },
 ) => {
   await prisma.payment.update({
-    where: { id },
+    where: { id: Number(id) },
     data: {
       sum,
-      groupId,
-      senderId,
-      receiverId,
+      groupId: Number(groupId),
+      senderId: Number(senderId),
+      receiverId: Number(receiverId),
     },
   });
   await prisma.group.update({
-    where: { id: groupId },
+    where: { id: Number(groupId) },
     data: {
       updatedAt: new Date(),
     },
   });
 
   return prisma.payment.findUnique({
-    where: { id },
+    where: { id: Number(id) },
     include: {
       sender: true,
       receiver: true,

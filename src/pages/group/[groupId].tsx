@@ -3,8 +3,8 @@ import { useRouter } from "next/router";
 import { gql, useMutation, useQuery } from "urql";
 import Link from "next/link";
 
-export const GroupQuery = gql`
-  query GroupQuery($id: Int!) {
+const GroupQuery = gql`
+  query GroupQuery($id: String!) {
     group(id: $id) {
       id
       title
@@ -91,55 +91,70 @@ export const GroupQuery = gql`
   }
 `;
 
-const Expense = ({ item }) => (
-  <>
-    <h4>
-      {item.title}: {item.sum}&euro;
-    </h4>
-    <p>
-      Created by {item.user.name} at {item.createdAt}
-    </p>
-    <p>Paid by:</p>
-    <ul>
-      {item.payments?.map((balance) => (
-        <li key={balance.id}>
-          {balance.user.name}: {balance.sum}&euro;
-        </li>
-      ))}
-    </ul>
-    <p>Owed by:</p>
-    <ul>
-      {item.debts?.map((balance) => (
-        <li key={balance.id}>
-          {balance.user.name}: {balance.sum}&euro;
-        </li>
-      ))}
-    </ul>
-  </>
-);
-
-const Payment = ({ group, item }) => {
+const Expense = ({ group, item }) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  if (!isEditing) {
+  if (isEditing) {
     return (
-      <>
-        <h4>
-          {item.sender.name} sent {item.sum}&euro; to {item.receiver.name}
-        </h4>
-        <p>At {item.createdAt}</p>
-        <button onClick={() => setIsEditing(true)}>edit</button>
-      </>
+      <ExpenseForm
+        expense={item}
+        groupId={group.id}
+        users={group.members}
+        cancel={() => setIsEditing(false)}
+      />
     );
   }
 
   return (
-    <PaymentForm
-      groupId={group.id}
-      users={group.members}
-      payment={item}
-      cancel={() => setIsEditing(false)}
-    />
+    <>
+      <h4>
+        {item.title}: {item.sum}&euro;
+      </h4>
+      <p>
+        Created by {item.user.name} at {item.createdAt}
+      </p>
+      <p>Paid by:</p>
+      <ul>
+        {item.payments?.map((balance) => (
+          <li key={balance.id}>
+            {balance.user.name}: {balance.sum}&euro;
+          </li>
+        ))}
+      </ul>
+      <p>Owed by:</p>
+      <ul>
+        {item.debts?.map((balance) => (
+          <li key={balance.id}>
+            {balance.user.name}: {balance.sum}&euro;
+          </li>
+        ))}
+      </ul>
+      <button onClick={() => setIsEditing(true)}>edit</button>
+    </>
+  );
+};
+
+const Payment = ({ group, item }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  if (isEditing) {
+    return (
+      <PaymentForm
+        groupId={group.id}
+        users={group.members}
+        payment={item}
+        cancel={() => setIsEditing(false)}
+      />
+    );
+  }
+  return (
+    <>
+      <h4>
+        {item.sender.name} sent {item.sum}&euro; to {item.receiver.name}
+      </h4>
+      <p>At {item.createdAt}</p>
+      <button onClick={() => setIsEditing(true)}>edit</button>
+    </>
   );
 };
 
@@ -152,15 +167,35 @@ const UpdateGroupMutation = `
   }
 `;
 
-const GroupTitle = ({ group }) => {
+const DeleteGroupMutation = gql`
+  mutation DeleteGroupMutation($id: ID!) {
+    deleteGroup(id: $id) {
+      id
+    }
+  }
+`;
+
+const GroupForm = ({ group }) => {
+  const { push: routerPush } = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(group.title);
   const [updateGroupResult, updateGroup] = useMutation(UpdateGroupMutation);
+  const [deleteResult, doDelete] = useMutation(DeleteGroupMutation);
+
+  const deleteGroup = async () => {
+    if (confirm("delete?")) {
+      await doDelete({ id: group.id });
+      await routerPush("/");
+    }
+  };
 
   if (!isEditing) {
     return (
       <h2>
-        {title} <button onClick={() => setIsEditing(true)}>edit</button>
+        {title} <button onClick={() => setIsEditing(true)}>edit</button>{" "}
+        <button onClick={deleteGroup} disabled={deleteResult.fetching}>
+          delete
+        </button>
       </h2>
     );
   }
@@ -194,7 +229,12 @@ const GroupTitle = ({ group }) => {
 };
 
 const CreatePaymentMutation = gql`
-  mutation ($sum: Float!, $groupId: Int!, $senderId: Int!, $receiverId: Int!) {
+  mutation (
+    $sum: Float!
+    $groupId: String!
+    $senderId: String!
+    $receiverId: String!
+  ) {
     createPayment(
       sum: $sum
       groupId: $groupId
@@ -208,11 +248,11 @@ const CreatePaymentMutation = gql`
 
 const UpdatePaymentMutation = gql`
   mutation UpdatePaymentMutation(
-    $id: Int!
+    $id: ID!
     $sum: Float!
-    $groupId: Int!
-    $senderId: Int!
-    $receiverId: Int!
+    $groupId: String!
+    $senderId: String!
+    $receiverId: String!
   ) {
     updatePayment(
       id: $id
@@ -227,7 +267,7 @@ const UpdatePaymentMutation = gql`
 `;
 
 const DeletePaymentMutation = gql`
-  mutation UpdatePaymentMutation($id: Int!) {
+  mutation UpdatePaymentMutation($id: ID!) {
     deletePayment(id: $id) {
       id
       groupId
@@ -248,21 +288,22 @@ const PaymentForm = ({ groupId, users, payment = null, cancel }) => {
     if (sum.length > 0 && senderId && receiverId) {
       await save({
         sum: parseFloat(sum),
-        groupId: Number(groupId),
-        senderId: Number(senderId),
-        receiverId: Number(receiverId),
-        ...(payment ? { id: Number(payment.id) } : {}),
+        groupId: groupId,
+        senderId: senderId,
+        receiverId: receiverId,
+        ...(payment ? { id: payment.id } : {}),
       });
       cancelEditing();
     }
   };
 
   const deletePayment = async () => {
-    await doDelete({ id: Number(payment.id) });
+    await doDelete({ id: payment.id });
     cancelEditing();
   };
 
-  const cancelEditing = () => {
+  const cancelEditing = (event = null) => {
+    event?.preventDefault();
     setSum("");
     setSenderId(undefined);
     setReceiverId(undefined);
@@ -274,7 +315,7 @@ const PaymentForm = ({ groupId, users, payment = null, cancel }) => {
       from{" "}
       <select
         value={senderId}
-        onChange={(e) => setSenderId(Number(e.currentTarget.value))}
+        onChange={(e) => setSenderId(e.currentTarget.value)}
       >
         <option>---</option>
         {users.map((user) => (
@@ -286,7 +327,7 @@ const PaymentForm = ({ groupId, users, payment = null, cancel }) => {
       to{" "}
       <select
         value={receiverId}
-        onChange={(e) => setReceiverId(Number(e.currentTarget.value))}
+        onChange={(e) => setReceiverId(e.currentTarget.value)}
       >
         <option>---</option>
         {users.map((user) => (
@@ -316,11 +357,17 @@ const PaymentForm = ({ groupId, users, payment = null, cancel }) => {
 };
 
 const NewPayment = ({ groupId, users }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  if (!isEditing) {
+  const {
+    push: routerPush,
+    query: { payment },
+  } = useRouter();
+
+  if (!payment) {
     return (
       <h2>
-        <button onClick={() => setIsEditing(true)}>new payment</button>
+        <Link href={`/group/${groupId}?payment=new`}>
+          <button>new payment</button>
+        </Link>
       </h2>
     );
   }
@@ -329,7 +376,186 @@ const NewPayment = ({ groupId, users }) => {
     <PaymentForm
       groupId={groupId}
       users={users}
-      cancel={() => setIsEditing(false)}
+      cancel={() => routerPush(`/group/${groupId}`)}
+    />
+  );
+};
+
+const CreateExpenseMutation = gql`
+  mutation CreateExpenseMutation(
+    $title: String!
+    $sum: Float!
+    $paysUserId: String!
+    $groupId: String!
+    $split: JSON!
+  ) {
+    createExpense(
+      title: $title
+      sum: $sum
+      paysUserId: $paysUserId
+      groupId: $groupId
+      split: $split
+    ) {
+      id
+    }
+  }
+`;
+
+const UpdateExpenseMutation = gql`
+  mutation UpdateExpenseMutation(
+    $id: ID!
+    $title: String!
+    $sum: Float!
+    $paysUserId: String!
+    $groupId: String!
+    $split: JSON!
+  ) {
+    updateExpense(
+      id: $id
+      title: $title
+      sum: $sum
+      paysUserId: $paysUserId
+      groupId: $groupId
+      split: $split
+    ) {
+      id
+    }
+  }
+`;
+
+const DeleteExpenseMutation = gql`
+  mutation DeleteExpenseMutation($id: ID!) {
+    deleteExpense(id: $id) {
+      id
+      groupId
+    }
+  }
+`;
+
+const ExpenseForm = ({ groupId, users, expense = null, cancel }) => {
+  const [title, setTitle] = useState(expense?.title ?? "");
+  const [sum, setSum] = useState(expense?.sum ?? "");
+  const [paysUserId, setPaysUserId] = useState(
+    expense?.payments?.[0]?.user?.id,
+  );
+  const [split, setSplit] = useState(
+    expense?.split ??
+      users.reduce((acc, user) => ({ ...acc, [user.id]: true }), {}),
+  );
+  const [saveResult, save] = useMutation(
+    expense ? UpdateExpenseMutation : CreateExpenseMutation,
+  );
+  const [deleteResult, doDelete] = useMutation(DeleteExpenseMutation);
+
+  const savePayment = async (event) => {
+    event.preventDefault();
+    await save({
+      sum: parseFloat(sum),
+      groupId: groupId,
+      split: JSON.stringify(split),
+      title,
+      paysUserId: paysUserId,
+      ...(expense ? { id: expense.id } : {}),
+    });
+    cancelEditing();
+  };
+
+  const deleteExpense = async () => {
+    await doDelete({ id: expense.id });
+    cancelEditing();
+  };
+
+  const cancelEditing = (event = null) => {
+    event?.preventDefault();
+    setSum("");
+    cancel();
+  };
+
+  return (
+    <form onSubmit={savePayment}>
+      title{" "}
+      <input
+        autoFocus
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.currentTarget.value)}
+        disabled={saveResult.fetching}
+      />
+      <br />
+      sum{" "}
+      <input
+        type="text"
+        value={sum}
+        onChange={(e) => setSum(e.currentTarget.value)}
+        disabled={saveResult.fetching}
+      />
+      <br />
+      paid by{" "}
+      <select
+        value={paysUserId}
+        onChange={(e) => setPaysUserId(e.currentTarget.value)}
+      >
+        <option>---</option>
+        {users.map((user) => (
+          <option key={user.id} value={user.id}>
+            {user.name}
+          </option>
+        ))}
+      </select>
+      <br />
+      split{" "}
+      <ul>
+        {users.map((user) => (
+          <li key={user.id}>
+            {user.name}
+            <input
+              type="checkbox"
+              checked={split[user.id]}
+              onChange={(e) =>
+                setSplit({ ...split, [user.id]: e.currentTarget.checked })
+              }
+            />
+          </li>
+        ))}
+      </ul>
+      <br />
+      <button
+        disabled={saveResult.fetching || sum.length === 0 || title.length === 0}
+      >
+        save
+      </button>
+      {expense && (
+        <button disabled={deleteResult.fetching} onClick={deleteExpense}>
+          delete
+        </button>
+      )}
+      <button disabled={saveResult.fetching} onClick={cancelEditing}>
+        cancel
+      </button>
+    </form>
+  );
+};
+
+const NewExpense = ({ groupId, users }) => {
+  const {
+    push: routerPush,
+    query: { expense },
+  } = useRouter();
+  if (!expense) {
+    return (
+      <h2>
+        <Link href={`/group/${groupId}?expense=new`}>
+          <button>new expense</button>
+        </Link>
+      </h2>
+    );
+  }
+
+  return (
+    <ExpenseForm
+      groupId={groupId}
+      users={users}
+      cancel={() => routerPush(`/group/${groupId}`)}
     />
   );
 };
@@ -340,8 +566,9 @@ const Group = () => {
   } = useRouter();
   const [{ data, fetching, error }] = useQuery({
     query: GroupQuery,
-    variables: { id: Number(groupId) },
+    variables: { id: groupId },
   });
+
   return (
     <div>
       <Link href="/">&larr; Back to groups</Link>
@@ -349,7 +576,7 @@ const Group = () => {
       {error && <p>Failed 🤷</p>}
       {data && (
         <>
-          <GroupTitle group={data.group} />
+          <GroupForm group={data.group} />
           <p>Created by {data.group.user.name}</p>
           <h3>Totals:</h3>
           <ul>
@@ -391,12 +618,15 @@ const Group = () => {
               </li>
             ))}
           </ul>
+          <NewExpense groupId={data.group.id} users={data.group.members} />
           <NewPayment groupId={data.group.id} users={data.group.members} />
           <h3>Feed:</h3>
           <ul>
             {data.group.feed?.map((item) => (
               <li key={`${item.__typename}-${item.id}`}>
-                {item.__typename === "Expense" && <Expense item={item} />}
+                {item.__typename === "Expense" && (
+                  <Expense item={item} group={data.group} />
+                )}
                 {item.__typename === "Payment" && (
                   <Payment item={item} group={data.group} />
                 )}

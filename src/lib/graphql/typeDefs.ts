@@ -1,27 +1,39 @@
 export const typeDefs = `
   scalar Date
+  scalar JSON
   type Query {
-    groups: [Group]
-    group(id: Int!): GroupDetails
+    groups: [GroupItem]
+    group(id: String!): Group
   }
   type Mutation {
-    createGroup(title: String!): GroupDetails
-    updateGroup(id: ID!, title: String!): GroupDetails
-    createPayment(sum: Float!, groupId: Int!, senderId: Int!, receiverId: Int!): Payment
-    updatePayment(id: Int!, sum: Float!, groupId: Int!, senderId: Int!, receiverId: Int!): Payment
-    deletePayment(id: Int!): PaymentId
+    createGroup(title: String!): Group
+    updateGroup(id: ID!, title: String!): Group
+    deleteGroup(id: String!): GroupId
+    createExpense(title: String!, sum: Float!, paysUserId: String!, groupId: String!, split: JSON!): Expense
+    updateExpense(id: ID!, title: String!, sum: Float!, paysUserId: String!, groupId: String!, split: JSON!): Expense
+    deleteExpense(id: ID!): ExpenseId
+    createPayment(sum: Float!, groupId: String!, senderId: String!, receiverId: String!): Payment
+    updatePayment(id: ID!, sum: Float!, groupId: String!, senderId: String!, receiverId: String!): Payment
+    deletePayment(id: ID!): PaymentId
+  }
+  type GroupId {
+    id: ID!
+  }
+  type ExpenseId {
+    id: ID!
+    groupId: Int!
   }
   type PaymentId {
     id: ID!
     groupId: Int!
   }
-  type Group {
+  type GroupItem {
     id: ID!
     createdAt: Date!
     updatedAt: Date!
     title: String!
   }
-  type GroupDetails {
+  type Group {
     id: ID!
     createdAt: Date!
     updatedAt: Date!

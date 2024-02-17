@@ -7,18 +7,18 @@ export const createPayment = async (
     groupId,
     senderId,
     receiverId,
-  }: { sum: number; groupId: number; senderId: number; receiverId: number },
+  }: { sum: number; groupId: string; senderId: string; receiverId: string },
 ) => {
   const { id } = await prisma.payment.create({
     data: {
       sum,
-      groupId,
-      senderId,
-      receiverId,
+      group: { connect: { id: Number(groupId) } },
+      sender: { connect: { id: Number(senderId) } },
+      receiver: { connect: { id: Number(receiverId) } },
     },
   });
   await prisma.group.update({
-    where: { id: groupId },
+    where: { id: Number(groupId) },
     data: {
       updatedAt: new Date(),
     },

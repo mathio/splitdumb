@@ -1,9 +1,10 @@
+import { Decimal } from "decimal.js";
 import prisma from "./prisma";
 import { sortBy } from "./utils";
 
-export const findGroup = async (id: number) => {
+export const findGroup = async (id: string) => {
   return prisma.group.findUnique({
-    where: { id },
+    where: { id: Number(id) },
     include: {
       user: true,
       members: true,
@@ -11,10 +12,10 @@ export const findGroup = async (id: number) => {
   });
 };
 
-export const findExpenses = async (groupId: number) => {
+export const findExpenses = async (groupId: string) => {
   return (
     await prisma.expense.findMany({
-      where: { groupId },
+      where: { groupId: Number(groupId) },
       include: {
         payments: {
           include: {
@@ -44,10 +45,10 @@ export const findExpenses = async (groupId: number) => {
   }));
 };
 
-export const findPayments = async (groupId: number) => {
+export const findPayments = async (groupId: string) => {
   return (
     await prisma.payment.findMany({
-      where: { groupId },
+      where: { groupId: Number(groupId) },
       include: {
         sender: true,
         receiver: true,
@@ -59,19 +60,23 @@ export const findPayments = async (groupId: number) => {
 export const buildTotals = (
   expenses: any[],
   payments: any[],
-): Record<number, { user: any; sum: number }> => {
+): Record<number, { user: any; sum: Decimal }> => {
   const expenseBalances = expenses.flatMap((expense) => [
     ...expense.payments,
     ...expense.debts,
   ]);
   const paymentBalances = payments.flatMap(({ sender, receiver, sum }) => [
-    { user: sender, sum },
-    { user: receiver, sum: sum * -1 },
+    { user: sender, sum: new Decimal(sum) },
+    { user: receiver, sum: new Decimal(sum).times(-1) },
   ]);
   return [...expenseBalances, ...paymentBalances].reduce(
     (totals, { user, sum }) => {
-      totals[user.id] = totals[user.id] ?? { id: user.id, user, sum: 0 };
-      totals[user.id].sum += Number(sum);
+      totals[user.id] = totals[user.id] ?? {
+        id: user.id,
+        user,
+        sum: new Decimal(0),
+      };
+      totals[user.id].sum = totals[user.id].sum.add(sum);
       return totals;
     },
     {},
@@ -91,35 +96,39 @@ export const buildTransactions = async (
   }));
 
   const totalsOwed = totalsArray
-    .filter((total) => total.sum < 0)
+    .filter((total) => total.sum.lt(0))
     .sort(sortBy("sum"));
 
   const totalsLent = totalsArray
-    .filter((total) => total.sum > 0)
+    .filter((total) => total.sum.gt(0))
     .sort(sortBy("sum", true));
 
   const allTransactions = [];
+
+  console.log(totalsArray);
 
   while (totalsOwed.length > 0 || totalsLent.length > 0) {
     const owed = totalsOwed.shift();
     const lent = totalsLent.shift();
 
+    console.log({ owed, lent });
+
     let sum;
     if (Math.abs(lent.sum) > Math.abs(owed.sum)) {
-      lent.sum += owed.sum;
+      lent.sum = lent.sum.add(owed.sum);
       if (lent.sum > 0) {
         totalsLent.unshift(lent);
       }
-      sum = owed.sum;
+      sum = owed.sum.toNumber();
     } else {
-      owed.sum += lent.sum;
+      owed.sum = owed.sum.add(lent.sum);
       if (owed.sum < 0) {
         totalsOwed.unshift(owed);
       }
-      sum = lent.sum;
+      sum = lent.sum.toNumber();
     }
 
-    // console.log(`${owed.user.name} pays ${sum} to ${lent.user.name}`);
+    console.log(`${owed.user.name} pays ${sum} to ${lent.user.name}`);
 
     allTransactions.push({
       from: owed.user,
@@ -144,7 +153,7 @@ export const buildTransactions = async (
   }));
 };
 
-export const getGroup = async (_, { id }) => {
+export const getGroup = async (_, { id }: { id: string }) => {
   const group = await findGroup(id);
 
   const expenses = await findExpenses(id);
@@ -158,7 +167,10 @@ export const getGroup = async (_, { id }) => {
     ...group,
     users,
     feed,
-    totals: Object.values(totals),
+    totals: Object.values(totals).map(({ sum, ...obj }) => ({
+      ...obj,
+      sum: sum.toNumber(),
+    })),
     transactions: buildTransactions(totals, users),
   };
 };

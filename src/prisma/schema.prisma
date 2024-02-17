@@ -27,7 +27,7 @@ model Expense {
   title     String
   payments  Balance[] @relation("Pays")
   debts     Balance[] @relation("Owes")
-  group     Group     @relation(fields: [groupId], references: [id])
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId   Int
   user      User      @relation(fields: [userId], references: [id])
   userId    Int
@@ -35,8 +35,8 @@ model Expense {
 
 model Balance {
   id        Int     @id @default(autoincrement())
-  pays      Expense @relation("Pays", fields: [expenseId], references: [id], map: "expenses1")
-  owes      Expense @relation("Owes", fields: [expenseId], references: [id], map: "expenses2")
+  pays      Expense @relation("Pays", fields: [expenseId], references: [id], map: "expenses1", onDelete: Cascade)
+  owes      Expense @relation("Owes", fields: [expenseId], references: [id], map: "expenses2", onDelete: Cascade)
   expenseId Int
   user      User    @relation(fields: [userId], references: [id])
   userId    Int
@@ -51,7 +51,7 @@ model Payment {
   senderId   Int
   receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
   receiverId Int
-  group      Group?   @relation(fields: [groupId], references: [id])
+  group      Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId    Int?
   sum        Decimal
 }
