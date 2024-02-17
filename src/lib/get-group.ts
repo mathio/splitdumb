@@ -1,7 +1,16 @@
 import prisma from "./prisma";
 import { sortBy } from "./utils";
 
-export const getExpenses = async (groupId: number) => {
+export const findGroup = async (id: number) => {
+  return prisma.group.findUnique({
+    where: { id },
+    include: {
+      user: true,
+    },
+  });
+};
+
+export const findExpenses = async (groupId: number) => {
   return (
     await prisma.expense.findMany({
       where: { groupId },
@@ -34,7 +43,7 @@ export const getExpenses = async (groupId: number) => {
   }));
 };
 
-export const getPayments = async (groupId: number) => {
+export const findPayments = async (groupId: number) => {
   return (
     await prisma.payment.findMany({
       where: { groupId },
@@ -46,7 +55,23 @@ export const getPayments = async (groupId: number) => {
   ).map((e) => ({ ...e, __typename: "Payment" }));
 };
 
-export const getTransactions = async (
+export const buildTotals = (
+  expenses: any[],
+): Record<number, { user: any; sum: number }> => {
+  return expenses
+    .flatMap((expense) => [...expense.payments, ...expense.debts])
+    .reduce((totals, { user, sum }) => {
+      totals[user.id] = totals[user.id] ?? { user, sum: 0 };
+      totals[user.id].sum += Number(sum);
+      return totals;
+    }, {});
+};
+
+export const buildUsers = (totals: Record<number, any>) => {
+  return Object.values(totals).map(({ user }) => user);
+};
+
+export const buildTransactions = async (
   totals: Record<number, any>,
   users: any[],
 ) => {
@@ -102,42 +127,21 @@ export const getTransactions = async (
   }));
 };
 
-export const getTotals = (
-  expenses: any[],
-): Record<number, { user: any; sum: number }> => {
-  return expenses
-    .flatMap((expense) => [...expense.payments, ...expense.debts])
-    .reduce((totals, { user, sum }) => {
-      totals[user.id] = totals[user.id] ?? { user, sum: 0 };
-      totals[user.id].sum += Number(sum);
-      return totals;
-    }, {});
-};
-
-export const getUsers = (totals: Record<number, any>) => {
-  return Object.values(totals).map(({ user }) => user);
-};
-
 export const getGroup = async (_, { id }) => {
-  const group = await prisma.group.findUnique({
-    where: { id },
-    include: {
-      user: true,
-    },
-  });
+  const group = await findGroup(id);
 
-  const expenses = await getExpenses(id);
-  const payments = await getPayments(id);
+  const expenses = await findExpenses(id);
+  const payments = await findPayments(id);
   const feed = [...expenses, ...payments].sort(sortBy("createdAt", true));
 
-  const totals = getTotals(expenses);
-  const users = getUsers(totals);
+  const totals = buildTotals(expenses);
+  const users = buildUsers(totals);
 
   return {
     ...group,
     users,
     feed,
     totals: Object.values(totals),
-    transactions: getTransactions(totals, users),
+    transactions: buildTransactions(totals, users),
   };
 };
