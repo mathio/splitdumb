@@ -57,14 +57,24 @@ export const findPayments = async (groupId: number) => {
 
 export const buildTotals = (
   expenses: any[],
+  payments: any[],
 ): Record<number, { user: any; sum: number }> => {
-  return expenses
-    .flatMap((expense) => [...expense.payments, ...expense.debts])
-    .reduce((totals, { user, sum }) => {
+  const expenseBalances = expenses.flatMap((expense) => [
+    ...expense.payments,
+    ...expense.debts,
+  ]);
+  const paymentBalances = payments.flatMap(({ sender, receiver, sum }) => [
+    { user: sender, sum },
+    { user: receiver, sum: sum * -1 },
+  ]);
+  return [...expenseBalances, ...paymentBalances].reduce(
+    (totals, { user, sum }) => {
       totals[user.id] = totals[user.id] ?? { user, sum: 0 };
       totals[user.id].sum += Number(sum);
       return totals;
-    }, {});
+    },
+    {},
+  );
 };
 
 export const buildUsers = (totals: Record<number, any>) => {
@@ -93,7 +103,7 @@ export const buildTransactions = async (
     const owed = totalsOwed.shift();
     const lent = totalsLent.shift();
 
-    if (lent.sum > owed.sum) {
+    if (Math.abs(lent.sum) > Math.abs(owed.sum)) {
       lent.sum += owed.sum;
       if (lent.sum > 0) {
         totalsLent.unshift(lent);
@@ -105,7 +115,7 @@ export const buildTransactions = async (
       });
     } else {
       owed.sum += lent.sum;
-      if (owed.sum > 0) {
+      if (owed.sum < 0) {
         totalsOwed.unshift(owed);
       }
       allTransactions.push({
@@ -134,7 +144,7 @@ export const getGroup = async (_, { id }) => {
   const payments = await findPayments(id);
   const feed = [...expenses, ...payments].sort(sortBy("createdAt", true));
 
-  const totals = buildTotals(expenses);
+  const totals = buildTotals(expenses, payments);
   const users = buildUsers(totals);
 
   return {
