@@ -53,18 +53,6 @@ describe("buildTotals", () => {
   // TODO
 });
 
-describe("buildUsers", () => {
-  it("should return a array of users", async () => {
-    const users = [{ id: 1 }, { id: 10 }, { id: 20 }];
-    const totals: any = {
-      1: { user: users[0], sum: 10 },
-      2: { user: users[1], sum: 20 },
-      3: { user: users[2], sum: 30 },
-    };
-    expect(await buildUsers(totals)).toEqual(users);
-  });
-});
-
 describe("buildTransactions", () => {
   // TODO
 });

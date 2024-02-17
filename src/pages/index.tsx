@@ -1,8 +1,55 @@
 import Link from "next/link";
-import { gql, useQuery } from "urql";
+import { gql, useMutation, useQuery } from "urql";
+import { useState } from "react";
 
-const AllGroupsQuery = gql`
-  query {
+const CreateGroupMutation = `
+  mutation ($title: String!) {
+    createGroup (title: $title) {
+      id
+      title
+    }
+  }
+`;
+
+const NewGroup = () => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState("");
+  const [createGroupResult, createGroup] = useMutation(CreateGroupMutation);
+
+  if (!isEditing) {
+    return (
+      <h2>
+        <button onClick={() => setIsEditing(true)}>new</button>
+      </h2>
+    );
+  }
+
+  const saveTitle = async (event) => {
+    event.preventDefault();
+    if (title.length > 0) {
+      await createGroup({ title });
+      setIsEditing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={saveTitle}>
+      <input
+        autoFocus
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.currentTarget.value)}
+        disabled={createGroupResult.fetching}
+      />
+      <button disabled={createGroupResult.fetching || title.length === 0}>
+        save
+      </button>
+    </form>
+  );
+};
+
+export const AllGroupsQuery = gql`
+  query AllGroupsQuery {
     groups {
       id
       title
@@ -28,6 +75,7 @@ const Groups = () => {
           ))}
         </ul>
       )}
+      <NewGroup />
     </div>
   );
 };

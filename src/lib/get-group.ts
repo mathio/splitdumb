@@ -6,6 +6,7 @@ export const findGroup = async (id: number) => {
     where: { id },
     include: {
       user: true,
+      members: true,
     },
   });
 };
@@ -69,7 +70,7 @@ export const buildTotals = (
   ]);
   return [...expenseBalances, ...paymentBalances].reduce(
     (totals, { user, sum }) => {
-      totals[user.id] = totals[user.id] ?? { user, sum: 0 };
+      totals[user.id] = totals[user.id] ?? { id: user.id, user, sum: 0 };
       totals[user.id].sum += Number(sum);
       return totals;
     },
@@ -103,37 +104,43 @@ export const buildTransactions = async (
     const owed = totalsOwed.shift();
     const lent = totalsLent.shift();
 
+    let sum;
     if (Math.abs(lent.sum) > Math.abs(owed.sum)) {
       lent.sum += owed.sum;
       if (lent.sum > 0) {
         totalsLent.unshift(lent);
       }
-      allTransactions.push({
-        from: owed.user,
-        to: lent.user,
-        sum: owed.sum,
-      });
+      sum = owed.sum;
     } else {
       owed.sum += lent.sum;
       if (owed.sum < 0) {
         totalsOwed.unshift(owed);
       }
-      allTransactions.push({
-        from: owed.user,
-        to: lent.user,
-        sum: lent.sum,
-      });
+      sum = lent.sum;
     }
+
+    // console.log(`${owed.user.name} pays ${sum} to ${lent.user.name}`);
+
+    allTransactions.push({
+      from: owed.user,
+      to: lent.user,
+      sum,
+    });
   }
 
   return users.map((user) => ({
+    id: user.id,
     user,
     from: allTransactions
       .filter((t) => t.to.id === user.id)
-      .map(({ from, sum }) => ({ user: from, sum })),
+      .map(({ from, sum }) => ({
+        id: `${user.id}-${from.id}`,
+        user: from,
+        sum,
+      })),
     to: allTransactions
       .filter((t) => t.from.id === user.id)
-      .map(({ to, sum }) => ({ user: to, sum })),
+      .map(({ to, sum }) => ({ id: `${user.id}-${to.id}`, user: to, sum })),
   }));
 };
 

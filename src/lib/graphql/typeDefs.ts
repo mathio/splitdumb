@@ -4,6 +4,17 @@ export const typeDefs = `
     groups: [Group]
     group(id: Int!): GroupDetails
   }
+  type Mutation {
+    createGroup(title: String!): GroupDetails
+    updateGroup(id: ID!, title: String!): GroupDetails
+    createPayment(sum: Float!, groupId: Int!, senderId: Int!, receiverId: Int!): Payment
+    updatePayment(id: Int!, sum: Float!, groupId: Int!, senderId: Int!, receiverId: Int!): Payment
+    deletePayment(id: Int!): PaymentId
+  }
+  type PaymentId {
+    id: ID!
+    groupId: Int!
+  }
   type Group {
     id: ID!
     createdAt: Date!
@@ -17,22 +28,23 @@ export const typeDefs = `
     title: String!
     user: User!
     feed: [FeedItem]
-    expenses: [Expense]
-    payments: [Payment]
     totals: [UserTotal]
     transactions: [Transaction]
-    users: [User]
+    members: [User]
   }
   type Transaction {
+    id: ID!
     user: User!
     from: [TransactionDetails]
     to: [TransactionDetails]
   }
   type TransactionDetails {
+    id: ID!
     user: User!
     sum: Float!
   }
   type UserTotal {
+    id: ID!
     sum: Float!
     user: User!
   }

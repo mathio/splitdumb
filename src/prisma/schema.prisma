@@ -17,6 +17,7 @@ model Group {
   payments  Payment[]
   user      User      @relation(fields: [userId], references: [id])
   userId    Int
+  members   User[]    @relation("Member")
 }
 
 model Expense {
@@ -34,8 +35,8 @@ model Expense {
 
 model Balance {
   id        Int     @id @default(autoincrement())
-  pays   Expense @relation("Pays", fields: [expenseId], references: [id], map: "expenses1")
-  owes   Expense @relation("Owes", fields: [expenseId], references: [id], map: "expenses2")
+  pays      Expense @relation("Pays", fields: [expenseId], references: [id], map: "expenses1")
+  owes      Expense @relation("Owes", fields: [expenseId], references: [id], map: "expenses2")
   expenseId Int
   user      User    @relation(fields: [userId], references: [id])
   userId    Int
@@ -70,6 +71,7 @@ model User {
   balances         Balance[]
   expenses         Expense[]
   groups           Group[]
+  memberGroups     Group[]   @relation("Member")
 }
 
 model Account {
