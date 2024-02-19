@@ -5,9 +5,10 @@ export const typeDefs = `
     me: User
     groups: [GroupItem]
     group(id: String!): Group
+    friends: [User]
   }
   type Mutation {
-    createGroup(title: String!): Group
+    createGroup(title: String!, groupFriends: JSON!): Group
     updateGroup(id: ID!, title: String!): Group
     deleteGroup(id: String!): GroupId
     createExpense(title: String!, sum: Float!, paysUserId: String!, groupId: String!, split: JSON!): Expense
@@ -16,6 +17,7 @@ export const typeDefs = `
     createPayment(sum: Float!, groupId: String!, senderId: String!, receiverId: String!): Payment
     updatePayment(id: ID!, sum: Float!, groupId: String!, senderId: String!, receiverId: String!): Payment
     deletePayment(id: ID!): PaymentId
+    addFriend(name: String!, email: String!): User
   }
   type GroupId {
     id: ID!

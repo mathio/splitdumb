@@ -12,6 +12,8 @@ import { updatePayment } from "../update-payment";
 import { deletePayment } from "../delete-payment";
 import { getCurrentUser } from "../get-currect-user";
 import { GraphQLError } from "graphql/index";
+import { getFriends } from "../get-friends";
+import { addFriend } from "../add-friend";
 
 const checkUserSession = (context) => {
   if (!context.user) {
@@ -35,6 +37,7 @@ const Query = wrapWithCheckUserSession({
   groups: getGroups,
   group: getGroup,
   me: getCurrentUser,
+  friends: getFriends,
 });
 
 const Mutation = wrapWithCheckUserSession({
@@ -47,6 +50,7 @@ const Mutation = wrapWithCheckUserSession({
   createPayment,
   updatePayment,
   deletePayment,
+  addFriend,
 });
 
 export const resolvers: IResolvers<{}> = {

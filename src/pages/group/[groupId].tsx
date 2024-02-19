@@ -168,7 +168,7 @@ const UpdateGroupMutation = `
 `;
 
 const DeleteGroupMutation = gql`
-  mutation DeleteGroupMutation($id: ID!) {
+  mutation DeleteGroupMutation($id: String!) {
     deleteGroup(id: $id) {
       id
     }

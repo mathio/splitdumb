@@ -4,7 +4,7 @@ import { cacheExchange } from "@urql/exchange-graphcache";
 import { devtoolsExchange } from "@urql/devtools";
 import { SessionProvider, signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import { AllGroupsQuery } from "./index";
+import { AllFriendsQuery, AllGroupsQuery } from "./index";
 import Link from "next/link";
 
 const invalidateGroup = (result, args, cache) => {
@@ -33,6 +33,12 @@ const client = new Client({
                 data.groups.findIndex(({ id }) => id === args.id),
                 1,
               );
+              return data;
+            });
+          },
+          addFriend: (result, args, cache) => {
+            cache.updateQuery({ query: AllFriendsQuery }, (data) => {
+              data.friends.push(result.addFriend);
               return data;
             });
           },

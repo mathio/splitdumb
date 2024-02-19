@@ -75,6 +75,8 @@ model User {
   expenses         Expense[]
   groups           Group[]
   memberGroups     Group[]   @relation("Member")
+  friends          User[]    @relation("Friend")
+  friend           User[]    @relation("Friend")
 }
 
 model Account {
