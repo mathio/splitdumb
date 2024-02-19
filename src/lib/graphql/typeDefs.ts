@@ -2,6 +2,7 @@ export const typeDefs = `
   scalar Date
   scalar JSON
   type Query {
+    me: User
     groups: [GroupItem]
     group(id: String!): Group
   }

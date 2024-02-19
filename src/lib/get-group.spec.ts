@@ -4,7 +4,7 @@ describe("findGroup", () => {
   it("should return a group object", async () => {
     const group: any = { id: 1 };
     prismaMock.group.findUnique.mockResolvedValue(group);
-    expect(await findGroup(1)).toBe(group);
+    expect(await findGroup("1")).toBe(group);
   });
 });
 
@@ -21,7 +21,7 @@ describe("findExpenses", () => {
       },
     ];
     prismaMock.expense.findMany.mockResolvedValue(expenses);
-    expect(await findExpenses(1)).toEqual([
+    expect(await findExpenses("1")).toEqual([
       {
         id: 1,
         payments: [{ sum: 1 }, { sum: 2 }, { sum: 3 }],
@@ -42,7 +42,7 @@ describe("findPayments", () => {
   it("should return a array of payments", async () => {
     const payments: any[] = [{ id: 1 }, { id: 2 }];
     prismaMock.payment.findMany.mockResolvedValue(payments);
-    expect(await findPayments(1)).toEqual([
+    expect(await findPayments("1")).toEqual([
       { id: 1, __typename: "Payment" },
       { id: 2, __typename: "Payment" },
     ]);

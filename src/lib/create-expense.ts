@@ -16,12 +16,13 @@ export const createExpense = async (
     groupId: string;
     split: string;
   },
+  { user },
 ) => {
   const { id } = await prisma.expense.create({
     data: {
       title,
       group: { connect: { id: Number(groupId) } },
-      user: { connect: { id: Number(paysUserId) } },
+      user: { connect: { id: user.id } },
       payments: {
         createMany: {
           data: [{ sum, userId: Number(paysUserId) }],

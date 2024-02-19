@@ -1,10 +1,10 @@
 import prisma from "./prisma";
 
-export const createGroup = (_, { title }: { title: string }) => {
+export const createGroup = (_, { title }: { title: string }, { user }) => {
   return prisma.group.create({
     data: {
       title,
-      userId: 1,
+      userId: user.id,
     },
   });
 };

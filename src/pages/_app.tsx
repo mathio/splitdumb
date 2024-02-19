@@ -2,7 +2,10 @@ import { AppProps } from "next/app";
 import { Client, Provider, fetchExchange, gql } from "urql";
 import { cacheExchange } from "@urql/exchange-graphcache";
 import { devtoolsExchange } from "@urql/devtools";
+import { SessionProvider, signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 import { AllGroupsQuery } from "./index";
+import Link from "next/link";
 
 const invalidateGroup = (result, args, cache) => {
   cache.invalidate({
@@ -20,7 +23,7 @@ const client = new Client({
         Mutation: {
           createGroup: (result, args, cache) => {
             cache.updateQuery({ query: AllGroupsQuery }, (data) => {
-              data.groups.push(result.createGroup);
+              data.groups.unshift(result.createGroup);
               return data;
             });
           },
@@ -44,20 +47,38 @@ const client = new Client({
     }),
     fetchExchange,
   ],
-  // fetchOptions: () => {
-  //   const token = getToken();
-  //   return {
-  //     headers: { authorization: token ? `Bearer ${token}` : '' },
-  //   };
-  // },
 });
+
+const Header = () => {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
+  return (
+    <nav
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      <h1>💸 splitdumb</h1>
+      {status === "loading" && <div>Validating session ...</div>}
+      {!session && <Link href="/api/auth/signin">log in</Link>}
+      {session && (
+        <a onClick={() => confirm("log out?") && signOut()}>log out</a>
+      )}
+    </nav>
+  );
+};
 
 const App = ({ Component, pageProps }: AppProps) => {
   return (
-    <Provider value={client}>
-      <h1>Splitdumb</h1>
-      <Component {...pageProps} />
-    </Provider>
+    <SessionProvider session={pageProps.session}>
+      <Provider value={client}>
+        <Header />
+        <Component {...pageProps} />
+      </Provider>
+    </SessionProvider>
   );
 };
 

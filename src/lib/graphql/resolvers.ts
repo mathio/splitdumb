@@ -10,21 +10,46 @@ import { deleteExpense } from "../delete-expense";
 import { createPayment } from "../create-payment";
 import { updatePayment } from "../update-payment";
 import { deletePayment } from "../delete-payment";
+import { getCurrentUser } from "../get-currect-user";
+import { GraphQLError } from "graphql/index";
+
+const checkUserSession = (context) => {
+  if (!context.user) {
+    throw new GraphQLError("Unauthorized");
+  }
+};
+
+const wrapWithCheckUserSession = (fns) =>
+  Object.keys(fns).reduce(
+    (acc, key) => ({
+      ...acc,
+      [key]: (_, args, ctx) => {
+        checkUserSession(ctx);
+        return fns[key](_, args, ctx);
+      },
+    }),
+    {},
+  );
+
+const Query = wrapWithCheckUserSession({
+  groups: getGroups,
+  group: getGroup,
+  me: getCurrentUser,
+});
+
+const Mutation = wrapWithCheckUserSession({
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  createExpense,
+  updateExpense,
+  deleteExpense,
+  createPayment,
+  updatePayment,
+  deletePayment,
+});
 
 export const resolvers: IResolvers<{}> = {
-  Query: {
-    groups: getGroups,
-    group: getGroup,
-  },
-  Mutation: {
-    createGroup,
-    updateGroup,
-    deleteGroup,
-    createExpense,
-    updateExpense,
-    deleteExpense,
-    createPayment,
-    updatePayment,
-    deletePayment,
-  },
+  Query,
+  Mutation,
 };
