@@ -1,4 +1,4 @@
-import prisma from "./prisma";
+import prisma from "../prisma";
 
 export const getFriends = async (_, args, { user }) => {
   const { friend } = await prisma.user.findUnique({

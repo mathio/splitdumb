@@ -1,6 +1,7 @@
-import prisma from "./prisma";
+import prisma from "../prisma";
 import { calculateDebts } from "./calculate-debts";
-import { userIsMemberOfGroup } from "./get-group";
+import { getExpense } from "./get-expense";
+import { userIsMemberOfGroup } from "../group/user-is-member-of-group";
 
 export const createExpense = async (
   _,
@@ -46,26 +47,5 @@ export const createExpense = async (
     },
   });
 
-  return prisma.expense.findUnique({
-    where: { id },
-    include: {
-      payments: {
-        include: {
-          user: true,
-        },
-        where: {
-          sum: { gt: 0 },
-        },
-      },
-      debts: {
-        include: {
-          user: true,
-        },
-        where: {
-          sum: { lte: 0 },
-        },
-      },
-      user: true,
-    },
-  });
+  return getExpense(id);
 };

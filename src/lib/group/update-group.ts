@@ -1,5 +1,6 @@
-import prisma from "./prisma";
-import { userIsMemberOfGroup } from "./get-group";
+import prisma from "../prisma";
+
+import { userIsMemberOfGroup } from "./user-is-member-of-group";
 
 export const updateGroup = async (
   _,

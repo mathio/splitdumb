@@ -1,5 +1,6 @@
-import prisma from "./prisma";
-import { userIsMemberOfGroup } from "./get-group";
+import prisma from "../prisma";
+
+import { userIsMemberOfGroup } from "../group/user-is-member-of-group";
 
 export const deleteExpense = async (_, { id }: { id: string }, { user }) => {
   const expense = await prisma.expense.findUnique({

@@ -1,19 +1,19 @@
 import { IResolvers } from "@graphql-tools/utils/typings/Interfaces";
-import { getGroup } from "../get-group";
-import { getGroups } from "../get-groups";
-import { createGroup } from "../create-group";
-import { updateGroup } from "../update-group";
-import { deleteGroup } from "../delete-group";
-import { createExpense } from "../create-expense";
-import { updateExpense } from "../update-expense";
-import { deleteExpense } from "../delete-expense";
-import { createPayment } from "../create-payment";
-import { updatePayment } from "../update-payment";
-import { deletePayment } from "../delete-payment";
-import { getCurrentUser } from "../get-currect-user";
+import { getGroup } from "../group/get-group";
+import { getGroups } from "../group/get-groups";
+import { createGroup } from "../group/create-group";
+import { updateGroup } from "../group/update-group";
+import { deleteGroup } from "../group/delete-group";
+import { createExpense } from "../expense/create-expense";
+import { updateExpense } from "../expense/update-expense";
+import { deleteExpense } from "../expense/delete-expense";
+import { createPayment } from "../payment/create-payment";
+import { updatePayment } from "../payment/update-payment";
+import { deletePayment } from "../payment/delete-payment";
+import { getCurrentUser } from "../user/get-currect-user";
 import { GraphQLError } from "graphql/index";
-import { getFriends } from "../get-friends";
-import { addFriend } from "../add-friend";
+import { getFriends } from "../friend/get-friends";
+import { addFriend } from "../friend/add-friend";
 
 const checkUserSession = (context) => {
   if (!context.user) {

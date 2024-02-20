@@ -1,10 +1,10 @@
-import { buildUsers, findExpenses, findGroup, findPayments } from "./get-group";
-import { prismaMock } from "../../test/prisma-mock";
+import { findExpenses, findGroup, findPayments } from "./get-group";
+import { prismaMock } from "../../../test/prisma-mock";
 describe("findGroup", () => {
   it("should return a group object", async () => {
     const group: any = { id: 1 };
     prismaMock.group.findUnique.mockResolvedValue(group);
-    expect(await findGroup("1")).toBe(group);
+    expect(await findGroup("1", 1)).toBe(group);
   });
 });
 
@@ -47,16 +47,4 @@ describe("findPayments", () => {
       { id: 2, __typename: "Payment" },
     ]);
   });
-});
-
-describe("buildTotals", () => {
-  // TODO
-});
-
-describe("buildTransactions", () => {
-  // TODO
-});
-
-describe("getGroup", () => {
-  // TODO
 });
