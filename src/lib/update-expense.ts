@@ -1,5 +1,6 @@
 import prisma from "./prisma";
 import { calculateDebts } from "./calculate-debts";
+import { userIsMemberOfGroup } from "./get-group";
 
 export const updateExpense = async (
   _,
@@ -18,7 +19,10 @@ export const updateExpense = async (
     groupId: string;
     split: string;
   },
+  { user },
 ) => {
+  await userIsMemberOfGroup(user.id, groupId);
+
   await prisma.balance.deleteMany({
     where: { expenseId: Number(id) },
   });

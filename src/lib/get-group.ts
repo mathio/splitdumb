@@ -1,15 +1,36 @@
 import { Decimal } from "decimal.js";
 import prisma from "./prisma";
 import { sortBy } from "./utils";
+import { GraphQLError } from "graphql/index";
 
-export const findGroup = async (id: string) => {
+export const findGroup = async (id: string, userId: number) => {
   return prisma.group.findUnique({
-    where: { id: Number(id) },
+    where: {
+      id: Number(id),
+      members: { some: { id: userId } },
+    },
     include: {
       user: true,
       members: true,
     },
   });
+};
+
+export const userIsMemberOfGroup = async (
+  userId: number,
+  groupId: string | number,
+) => {
+  if (
+    1 !==
+    (await prisma.group.count({
+      where: {
+        id: Number(groupId),
+        members: { some: { id: userId } },
+      },
+    }))
+  ) {
+    throw new GraphQLError("Forbidden");
+  }
 };
 
 export const findExpenses = async (groupId: string) => {
@@ -60,6 +81,7 @@ export const findPayments = async (groupId: string) => {
 export const buildTotals = (
   expenses: any[],
   payments: any[],
+  users: any[],
 ): Record<number, { user: any; sum: Decimal }> => {
   const expenseBalances = expenses.flatMap((expense) => [
     ...expense.payments,
@@ -69,6 +91,11 @@ export const buildTotals = (
     { user: sender, sum: new Decimal(sum) },
     { user: receiver, sum: new Decimal(sum).times(-1) },
   ]);
+
+  const usersTotals = users.reduce((acc, user) => ({
+    [user.id]: { id: user.id, user, sum: new Decimal(0) },
+  }));
+
   return [...expenseBalances, ...paymentBalances].reduce(
     (totals, { user, sum }) => {
       totals[user.id] = totals[user.id] ?? {
@@ -79,12 +106,8 @@ export const buildTotals = (
       totals[user.id].sum = totals[user.id].sum.add(sum);
       return totals;
     },
-    {},
+    usersTotals,
   );
-};
-
-export const buildUsers = (totals: Record<number, any>) => {
-  return Object.values(totals).map(({ user }) => user);
 };
 
 export const buildTransactions = async (
@@ -153,24 +176,26 @@ export const buildTransactions = async (
   }));
 };
 
-export const getGroup = async (_, { id }: { id: string }) => {
-  const group = await findGroup(id);
+export const getGroup = async (_, { id }: { id: string }, { user }) => {
+  const group = await findGroup(id, user.id);
+
+  if (!group) {
+    throw new GraphQLError("Not found");
+  }
 
   const expenses = await findExpenses(id);
   const payments = await findPayments(id);
   const feed = [...expenses, ...payments].sort(sortBy("createdAt", true));
 
-  const totals = buildTotals(expenses, payments);
-  const users = buildUsers(totals);
+  const totals = buildTotals(expenses, payments, group.members);
 
   return {
     ...group,
-    users,
     feed,
     totals: Object.values(totals).map(({ sum, ...obj }) => ({
       ...obj,
       sum: sum.toNumber(),
     })),
-    transactions: buildTransactions(totals, users),
+    transactions: buildTransactions(totals, group.members),
   };
 };

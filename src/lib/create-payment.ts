@@ -1,4 +1,5 @@
 import prisma from "./prisma";
+import { userIsMemberOfGroup } from "./get-group";
 
 export const createPayment = async (
   _,
@@ -10,6 +11,8 @@ export const createPayment = async (
   }: { sum: number; groupId: string; senderId: string; receiverId: string },
   { user },
 ) => {
+  await userIsMemberOfGroup(user.id, groupId);
+
   const { id } = await prisma.payment.create({
     data: {
       sum,

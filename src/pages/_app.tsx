@@ -23,7 +23,7 @@ const client = new Client({
         Mutation: {
           createGroup: (result, args, cache) => {
             cache.updateQuery({ query: AllGroupsQuery }, (data) => {
-              data.groups.unshift(result.createGroup);
+              data?.groups?.unshift(result.createGroup);
               return data;
             });
           },
@@ -38,7 +38,7 @@ const client = new Client({
           },
           addFriend: (result, args, cache) => {
             cache.updateQuery({ query: AllFriendsQuery }, (data) => {
-              data.friends.push(result.addFriend);
+              data?.friends?.push(result.addFriend);
               return data;
             });
           },

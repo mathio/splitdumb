@@ -1,5 +1,6 @@
 import prisma from "./prisma";
 import { calculateDebts } from "./calculate-debts";
+import { userIsMemberOfGroup } from "./get-group";
 
 export const createExpense = async (
   _,
@@ -18,6 +19,8 @@ export const createExpense = async (
   },
   { user },
 ) => {
+  await userIsMemberOfGroup(user.id, groupId);
+
   const { id } = await prisma.expense.create({
     data: {
       title,

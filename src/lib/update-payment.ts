@@ -1,4 +1,5 @@
 import prisma from "./prisma";
+import { userIsMemberOfGroup } from "./get-group";
 
 export const updatePayment = async (
   _,
@@ -15,7 +16,10 @@ export const updatePayment = async (
     senderId: string;
     receiverId: string;
   },
+  { user },
 ) => {
+  await userIsMemberOfGroup(user.id, groupId);
+
   await prisma.payment.update({
     where: { id: Number(id) },
     data: {
