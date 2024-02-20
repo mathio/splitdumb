@@ -26,6 +26,7 @@
     "decimal.js": "^10.4.3",
     "graphql": "^16.8.1",
     "graphql-yoga": "^5.1.1",
+    "js-sha256": "^0.11.0",
     "next": "^14.1.0",
     "next-auth": "^4.24.6",
     "react": "^18.2.0",

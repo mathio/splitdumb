@@ -3,7 +3,6 @@ import { Client, Provider, fetchExchange, gql } from "urql";
 import { cacheExchange } from "@urql/exchange-graphcache";
 import { devtoolsExchange } from "@urql/devtools";
 import { SessionProvider, signOut, useSession } from "next-auth/react";
-import { useRouter } from "next/router";
 import { AllFriendsQuery, AllGroupsQuery } from "./index";
 import Link from "next/link";
 
@@ -56,9 +55,7 @@ const client = new Client({
 });
 
 const Header = () => {
-  const router = useRouter();
   const { data: session, status } = useSession();
-
   return (
     <nav
       style={{
@@ -71,7 +68,15 @@ const Header = () => {
       {status === "loading" && <div>Validating session ...</div>}
       {!session && <Link href="/api/auth/signin">log in</Link>}
       {session && (
-        <a onClick={() => confirm("log out?") && signOut()}>log out</a>
+        <p>
+          <img
+            src={session.user.image}
+            alt={session.user.name}
+            style={{ height: 50 }}
+          />{" "}
+          {session.user.name}{" "}
+          <a onClick={() => confirm("log out?") && signOut()}>log out</a>
+        </p>
       )}
     </nav>
   );
