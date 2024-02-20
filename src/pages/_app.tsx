@@ -5,6 +5,8 @@ import { devtoolsExchange } from "@urql/devtools";
 import { SessionProvider, signOut, useSession } from "next-auth/react";
 import { AllFriendsQuery, AllGroupsQuery } from "./index";
 import Link from "next/link";
+import { updateProfile } from "../lib/user/update-profile";
+import { MyProfileQuery } from "./me";
 
 const invalidateGroup = (result, args, cache) => {
   cache.invalidate({
@@ -20,6 +22,14 @@ const client = new Client({
     cacheExchange({
       updates: {
         Mutation: {
+          updateProfile: (result, args, cache) => {
+            cache.updateQuery({ query: MyProfileQuery }, (data) => {
+              if (data?.me) {
+                data.me = { ...data.me, ...(result.updateUserProfile as any) };
+              }
+              return data;
+            });
+          },
           createGroup: (result, args, cache) => {
             cache.updateQuery({ query: AllGroupsQuery }, (data) => {
               data?.groups?.unshift(result.createGroup);
@@ -69,12 +79,14 @@ const Header = () => {
       {!session && <Link href="/api/auth/signin">log in</Link>}
       {session && (
         <p>
-          <img
-            src={session.user.image}
-            alt={session.user.name}
-            style={{ height: 50 }}
-          />{" "}
-          {session.user.name}{" "}
+          <Link href="/me">
+            <img
+              src={session.user.image}
+              alt={session.user.name}
+              style={{ height: 50 }}
+            />{" "}
+            {session.user.name}{" "}
+          </Link>
           <a onClick={() => confirm("log out?") && signOut()}>log out</a>
         </p>
       )}

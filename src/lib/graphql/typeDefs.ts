@@ -8,6 +8,7 @@ export const typeDefs = `
     friends: [User]
   }
   type Mutation {
+    updateProfile(name: String!): User
     createGroup(title: String!, groupFriends: JSON!): Group
     updateGroup(id: ID!, title: String!): Group
     deleteGroup(id: String!): GroupId

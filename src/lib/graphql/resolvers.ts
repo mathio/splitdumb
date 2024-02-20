@@ -14,6 +14,7 @@ import { getCurrentUser } from "../user/get-currect-user";
 import { GraphQLError } from "graphql/index";
 import { getFriends } from "../friend/get-friends";
 import { addFriend } from "../friend/add-friend";
+import { updateProfile } from "../user/update-profile";
 
 const checkUserSession = (context) => {
   if (!context.user) {
@@ -41,6 +42,7 @@ const Query = wrapWithCheckUserSession({
 });
 
 const Mutation = wrapWithCheckUserSession({
+  updateProfile,
   createGroup,
   updateGroup,
   deleteGroup,
