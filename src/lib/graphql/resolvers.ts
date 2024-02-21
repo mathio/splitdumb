@@ -10,11 +10,12 @@ import { deleteExpense } from "../expense/delete-expense";
 import { createPayment } from "../payment/create-payment";
 import { updatePayment } from "../payment/update-payment";
 import { deletePayment } from "../payment/delete-payment";
-import { getCurrentUser } from "../user/get-currect-user";
+import { getCurrentUserProfile } from "../user/get-currect-user-profile";
 import { GraphQLError } from "graphql/index";
 import { getFriends } from "../friend/get-friends";
 import { addFriend } from "../friend/add-friend";
 import { updateProfile } from "../user/update-profile";
+import { linkEmail } from "../user/link-email";
 
 const checkUserSession = (context) => {
   if (!context.user) {
@@ -37,12 +38,13 @@ const wrapWithCheckUserSession = (fns) =>
 const Query = wrapWithCheckUserSession({
   groups: getGroups,
   group: getGroup,
-  me: getCurrentUser,
+  me: getCurrentUserProfile,
   friends: getFriends,
 });
 
 const Mutation = wrapWithCheckUserSession({
   updateProfile,
+  linkEmail,
   createGroup,
   updateGroup,
   deleteGroup,

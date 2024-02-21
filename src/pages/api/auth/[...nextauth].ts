@@ -15,7 +15,9 @@ const CustomEmailProvider: EmailConfig = {
   maxAge: 15 * 60,
   options: undefined,
   server: undefined,
-  sendVerificationRequest: async ({ identifier, url }) => {
+  sendVerificationRequest: async (params) => {
+    console.log("sendVerificationRequest", params);
+    const { identifier, url } = params;
     const result = await sendEmail(
       {
         name: "💸 Splitdumb",
@@ -34,19 +36,27 @@ const CustomEmailProvider: EmailConfig = {
   },
 };
 
-const authHandler: NextApiHandler = (req, res) => NextAuth(req, res, options);
+const authHandler: NextApiHandler = (req, res) => {
+  if (req.query.action === "link") {
+    options.providers = [providers[1]];
+  }
+  return NextAuth(req, res, options);
+};
 export default authHandler;
 
 const adapter = PrismaAdapter(prisma);
 
+const providers = [
+  GoogleProvider({
+    clientId: process.env.GOOGLE_AUTH_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET,
+    allowDangerousEmailAccountLinking: true,
+  }),
+  CustomEmailProvider,
+];
+
 const options = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_AUTH_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET,
-    }),
-    CustomEmailProvider,
-  ],
+  providers,
   adapter: {
     ...adapter,
     createUser: (user) => {
@@ -72,6 +82,10 @@ const options = {
         session.user.id = user.id;
       }
       return session;
+    },
+    async signIn(params) {
+      console.log("signin", params);
+      return true;
     },
   },
 };

@@ -77,6 +77,15 @@ model User {
   memberGroups     Group[]   @relation("Member")
   friends          User[]    @relation("Friend")
   friend           User[]    @relation("Friend")
+  emails           Email[]
+}
+
+model Email {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  email     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
 }
 
 model Account {

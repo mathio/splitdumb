@@ -2,13 +2,14 @@ export const typeDefs = `
   scalar Date
   scalar JSON
   type Query {
-    me: User
+    me: Profile
     groups: [GroupItem]
     group(id: String!): Group
     friends: [User]
   }
   type Mutation {
-    updateProfile(name: String!): User
+    updateProfile(name: String!, emails: [String!], primaryEmail: String): Profile!
+    linkEmail(token: String!): Profile!
     createGroup(title: String!, groupFriends: JSON!): Group
     updateGroup(id: ID!, title: String!): Group
     deleteGroup(id: String!): GroupId
@@ -19,6 +20,17 @@ export const typeDefs = `
     updatePayment(id: ID!, sum: Float!, groupId: String!, senderId: String!, receiverId: String!): Payment
     deletePayment(id: ID!): PaymentId
     addFriend(name: String!, email: String!): User
+  }
+  type Profile {
+    id: ID!
+    name: String!
+    email: String!
+    image: String!
+    emails: [ProfileEmail!]
+  }
+  type ProfileEmail {
+    email: String
+    verified: Boolean
   }
   type GroupId {
     id: ID!

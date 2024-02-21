@@ -23,11 +23,15 @@ const client = new Client({
       updates: {
         Mutation: {
           updateProfile: (result, args, cache) => {
-            cache.updateQuery({ query: MyProfileQuery }, (data) => {
-              if (data?.me) {
-                data.me = { ...data.me, ...(result.updateUserProfile as any) };
-              }
-              return data;
+            cache.invalidate({
+              __typename: "Profile",
+              id: Number((result.updateProfile as any).id),
+            });
+          },
+          linkEmail: (result, args, cache) => {
+            cache.invalidate({
+              __typename: "Profile",
+              id: Number((result.linkEmail as any).id),
             });
           },
           createGroup: (result, args, cache) => {
